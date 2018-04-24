@@ -1,0 +1,25 @@
+{
+  "name": "telegram-jenkins-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/silverprize/telegram-jenkins-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/silverprize/telegram-jenkins-bot/issues"
+  },
+  "homepage": "https://gitlab.com/silverprize/telegram-jenkins-bot#README",
+  "dependencies": {
+    "clorox": "^1.0.3",
+    "co-body": "^5.1.1",
+    "sqlite3": "^4.0.0"
+  }
+}
