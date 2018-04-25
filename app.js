@@ -1,19 +1,28 @@
 const path = require('path');
 const c = require('clorox');
 const https = require('https');
+const http = require('http');
 const url = require('url');
 const prase = require('co-body');
 const qs = require('querystring');
 const sqlite3 = require('sqlite3').verbose();
+const telegram = require('./lib/telegram')({
+    host: 'api.telegram.org',
+    token: '579574331:AAGwqJSkP8HJhzMgoICYrw36FSEdyhPov7c'
+});
+const jenkins = require('./lib/jenkins')({
+    host: '10.40.97.67',
+    port: '18083',
+    credential: 'admin:swfsvcadmin'
+});
 
-const db = new sqlite3.Database(path.join(__dirname, '.sqllitedb'));
-const host = 'api.telegram.org';
-const token = '579574331:AAGwqJSkP8HJhzMgoICYrw36FSEdyhPov7c';
+
 // 448519433:AAEi1nsk-DRBeRmTuC3ZrtVJRO9UedXOlCo
 
+const db = new sqlite3.Database(path.join(__dirname, '.sqllitedb'));
 const tableDDL = {
     users: 'create table users (user_name text, user_id num primary key)',
-    user_jobs: 'create table user_jobs (user_id num, job text) primary key (user_id, job)'
+    user_jobs: 'create table user_jobs (user_id num, job text, primary key (user_id, job))'
 };
 
 const log = {
@@ -31,8 +40,15 @@ for (let key in tableDDL) {
 loop(0);
 
 function loop(offset) {
-    const res = await request('/getUpdates', {offset});
-    let nextOffset = offset;
+    next(offset).then(offset => {
+        setTimeout(() => {
+            loop(offset);
+        }, 1000);    
+    });
+}
+
+async function next(offset) {
+    const res = await requestTelegram('/getUpdates', {offset});
     if (res.ok && res.result.length) {
         const data = res.result[0];
         log.info(`poll - ${JSON.stringify(data, null, 2)}`);
@@ -41,28 +57,48 @@ function loop(offset) {
         const chat_id = message.chat.id;
         const user_id = message.from.id;
         const entities = message.entities;
-        nextOffset = data.update_id + 1;
         if (entities && entities.length) {
             entities.forEach(entity => {
                 if (entity.type === 'bot_command') {
-                    const chatArgs = text.split(' ');
-                    const cmd = chatArgs[0];
-                    const args = chatArgs.slice(1).join('').trim();
+                    const textTokens = text.split(' ');
+                    const cmd = textTokens[0];
+                    const args = textTokens.slice(1).join('').trim();
                     switch (cmd) {
                         case '/help':
                             break;
                         case '/list':
-                            db.all('select * from user_jobs where user_id = $id', {$id: user_id}, (err, result) => {
-                                request('/sendMessage', {
-                                  chat_id: chat_id, 
-                                  text: JSON.stringify(result)
-                                });
+                            store.findJobsByUserId().then(jobs => {
+                                telegram.sendMessage(chat_id, JSON.stringify(result));
                             });
                             break;
                         case '/add':
-                            db.run('insert into user_jobs (user_id, job) values ($user_id, $job)', {$user_id: user_id, $job: args
+                            db.run('insert into user_jobs (user_id, job) values ($user_id, $job)', {
+                                $user_id: user_id, 
+                                $job: args
                             }, (err, result) => {
-                              request('/sendMessage', {chat_id: chat_id, text: `${args}`});
+                              requestTelegram('/sendMessage', {chat_id: chat_id, text: `${args}`});
+                            });
+                            break;
+                        case '/search':
+                            requestJenkins().then(builds => {
+                                const jobs = builds.jobs.filter(job => {
+                                    return job.name.toLowerCase().indexOf(args.toLowerCase()) !== -1;
+                                });
+                                splitAndRun(jobs)
+                                function splitAndRun(jobs) {
+                                    if (!jobs.length) {
+                                        return;
+                                    }
+                                    requestTelegram('/sendMessage', {
+                                        chat_id,
+                                        parse_mode: 'Markdown',
+                                        text: jobs.slice(0, 5).reduce((accum, job) => {
+                                            accum += `- [${job.name}](${job.url})\n`;
+                                            return accum;
+                                        }, '')
+                                    });
+                                    splitAndRun(jobs.slice(5, 5));
+                                }
                             });
                             break;
                         case '/remove':
@@ -73,17 +109,17 @@ function loop(offset) {
                 }
             });
         } else {
-            request('/sendMessage', { chat_id: chat_id, text: `echo ${text}` });
+            telegram.sendMessage(chat_id, `echo ${text}`);
         }
+        
+        return data.update_id + 1;
     }
 
-    setTimeout(() => {
-        loop(nextOffset);
-    }, 1000);
+    return offset;
 }
 
 function prepareDB(sql, name) {
-    db.get('select * from sqlite_master where name=$name', { $name: name }, (err, result) => {
+    db.get('select * from sqlite_master where name=$name', {$name: name}, (err, result) => {
         if (!result) {
             log.info(`${name} table not exists.`);
             db.run(sql, (err, result) => {
@@ -98,12 +134,12 @@ function prepareDB(sql, name) {
     });
 }
 
-function request(path, params) {
-    const promise = new Promise(resolve => {
+function requestTelegram(path, params) {
+    return new Promise(resolve => {
         const paramsSerialized = JSON.stringify(params);
         const options = {
-            hostname: `${host}`,
-            path: `/bot${token}${path}`,
+            hostname: telegramHost,
+            path: `/bot${telegramToken}${path}`,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json;charset=utf8',
@@ -118,7 +154,24 @@ function request(path, params) {
         req.write(paramsSerialized);
         req.end();
     });
-    return promise;
+}
+
+function requestJenkins(path = '', params) {
+    return new Promise(resolve => {
+        const paramsSerialized = JSON.stringify(params);
+        const options = {
+            hostname: jenkinsHost,
+            path: `${path}/api/json`,
+            auth: jenkinsCredential,
+            port: jenkinsPort
+        };
+        const req = http.request(options, async res => {
+            const data = await prase.json({ req: res });
+            resolve(data);
+        });
+
+        req.end();
+    });
 }
 
 function terminate() {
