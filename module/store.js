@@ -1,3 +1,5 @@
+module.exports = store;
+
 const log = require('../lib/logger')('store');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
@@ -6,7 +8,7 @@ const tableDDL = {
   user_jobs: 'create table user_jobs (user_id num, job text, primary key (user_id, job))'
 };
 
-module.exports = function (config) {
+function store(config) {
   const db = new sqlite3.Database(config.dbPath || path.join(process.cwd(), 'local.db'));
 
   function async(method, sql, params) {
@@ -72,4 +74,4 @@ module.exports = function (config) {
       return Promise.all(promises);
     }
   };
-};
+}

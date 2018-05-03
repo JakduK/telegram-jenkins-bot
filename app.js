@@ -1,14 +1,13 @@
+const _ = require('lodash');
 const configPath = process.argv[2] || './config.local.js';
 const config = require(configPath);
 const telegram = require('./lib/telegram')(config.telegram);
 const jenkins = require('./lib/jenkins')(config.jenkins);
 const store = require('./module/store')(config.db);
 const log = require('./lib/logger')('main');
-const api = {
-  jenkins,
-  store
-};
-const commandFactory = require('./command')(api, config);
+const api = {jenkins, store};
+const commandFactory = require('./module/command')(api, config);
+const contextFactory = require('./module/context')(api, config);
 
 process.on('SIGINT', terminate);
 process.on('SIGTERM', terminate);
@@ -20,33 +19,28 @@ start().then(() => {
 });
 
 async function next(offset) {
-  const tgUpdates = await telegram.getUpdates(offset);
-  if (!tgUpdates.ok || !tgUpdates.result.length) {
+  const updates = await telegram.getUpdates(offset);
+  if (!updates.ok || _.isEmpty(updates.result)) {
     return offset;
   }
-  
-  const tgUpdate = tgUpdates.result[0];
-  const tgMessage = getPropFromUpdate(tgUpdate, 'message');
-  const tgUser = getPropFromUpdate(tgUpdate, 'from');
-  const tgChat = getPropFromUpdate(tgUpdate, 'chat');
 
-  log.info(`Get update from telegram - update_id=${tgUpdate.update_id}, , from=${tgUser.id}`);
+  const context = contextFactory.create(updates.result[0]);
 
-  if (tgUpdate.message) {
-    const tgEntities = tgMessage.entities;
+  log.info(`Get update from telegram - update_id=${context.update.update_id}, , from=${context.user.id}`);
 
-    log.info(`\tObtained message - text=${tgMessage.text}`);
-    log.debug(`\t${JSON.stringify(tgMessage, null, 2)}`);
+  if (context.message) {
+    log.info(`-- message obtained - text=${context.message.text}`);
+    log.debug(`-- ${JSON.stringify(context.message, null, 2)}`);
 
-    if (tgEntities && tgEntities.length) {
-      tgEntities.forEach(async entity => {
+    if (!_.isEmpty(context.message.entities)) {
+      context.message.entities.forEach(async entity => {
         if (entity.type === 'bot_command') {
-          const textTokens = tgMessage.text.split(' ');
+          const textTokens = context.message.text.split(' ');
           const cmd = textTokens[0];
           const args = textTokens.slice(1).join('').trim();
-          
+
           try {
-            const user = await store.findUser(tgUser.id);
+            const user = await store.findUser(context.user.id);
             const command = commandFactory(cmd);
             if (!command.passAuth && !user) {
               telegram.sendMessage(tgChat.id, {
@@ -54,14 +48,16 @@ async function next(offset) {
                 parse_mode: 'Markdown'
               });
             } else {
-              const result = await command(tgMessage, args);
-              await store.updateUserLastCommand(tgUser.id, cmd, args, JSON.stringify(result));
+              const result = await command(context, args);
+              if (!command.isAnswer) {
+                await store.updateUserLastCommand(context.user.id, cmd, args, JSON.stringify(result));
+              }
 
-              const tgReplyMessage = command.toTgMessage ? command.toTgMessage(result) : {text: 'OK'};
-              const tgMessageResult = await telegram.sendMessage(tgChat.id, tgReplyMessage);
+              const tgReplyMessage = command.toTgMessage ? command.toTgMessage(result) : 'Ok';
+              const tgMessageResult = await telegram.sendMessage(context.chat.id, tgReplyMessage);
               if (!tgMessageResult.ok) {
                 log.error(JSON.stringify(tgMessageResult, null, 2));
-                telegram.sendMessage(tgChat.id, '잘못 들었습니다?');
+                telegram.sendMessage(context.chat.id, '잘못 들었습니다?');
               }
             }
           } catch (e) {
@@ -71,14 +67,14 @@ async function next(offset) {
         }
       });
     }
-  } else if (tgUpdate.callback_query) {
-    const callback_query = tgUpdate.callback_query;
+  } else if (context.callback_query) {
+    const callback_query = context.callback_query;
 
-    log.info(`\tObtained callback_query - data=${callback_query.data}, from=${callback_query.from.id}`);
-    log.debug(`\t${JSON.stringify(callback_query, null, 2)}`);
+    log.info(`-- callback_query obtained - data=${callback_query.data}, from=${callback_query.from.id}`);
+    log.debug(`-- ${JSON.stringify(callback_query, null, 2)}`);
   }
 
-  return tgUpdate.update_id + 1;
+  return context.update.update_id + 1;
 }
 
 async function start() {
@@ -88,10 +84,6 @@ async function start() {
 async function loop(offset) {
   const nextOffset = await next(offset);
   setTimeout(loop.bind(null, nextOffset), 500);
-}
-
-function getPropFromUpdate(update, key) {
-  return update[key] || (update.message || update.callback_query)[key];
 }
 
 function terminate() {
