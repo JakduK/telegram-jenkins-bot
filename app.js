@@ -6,8 +6,8 @@ const jenkins = require('./lib/jenkins')(config.jenkins);
 const store = require('./module/store')(config.db);
 const log = require('./lib/logger')('main');
 const api = {jenkins, store};
-const commandFactory = require('./module/command')(api, config);
-const contextFactory = require('./module/context')(api, config);
+const commandManager = require('./module/command_manager');
+const contextFactory = require('./module/context_factory');
 
 process.on('SIGINT', terminate);
 process.on('SIGTERM', terminate);
@@ -25,6 +25,10 @@ async function next(offset) {
   }
 
   const context = contextFactory.create(updates.result[0]);
+  const user = await store.findUser(context.user.id);
+  context.api = api;
+  context.api = api;
+  context.config = config;
 
   log.info(`Get update from telegram - update_id=${context.update.update_id}, , from=${context.user.id}`);
 
@@ -40,21 +44,20 @@ async function next(offset) {
           const args = textTokens.slice(1).join('').trim();
 
           try {
-            const user = await store.findUser(context.user.id);
-            const command = commandFactory(cmd);
-            if (!command.passAuth && !user) {
-              telegram.sendMessage(tgChat.id, {
-                text: ['님. 인증부터 해주세요.🔒', '`/pass <비밀번호>`'].join('\n'),
-                parse_mode: 'Markdown'
-              });
+            const command = commandManager.create(cmd);
+
+            if (!command.permitAll && !user) {
+              telegram.sendMessage(context.chat.id, ['님. 인증부터 해주세요.🔒', '`/pass <비밀번호>`'].join('\n'));
             } else {
-              const result = await command(context, args);
-              if (!command.isAnswer) {
+              const result = await command.run(context, args);
+
+              if (command.hasNext) {
                 await store.updateUserLastCommand(context.user.id, cmd, args, JSON.stringify(result));
               }
 
-              const tgReplyMessage = command.toTgMessage ? command.toTgMessage(result) : 'Ok';
+              const tgReplyMessage = command.toTgMessage(result);
               const tgMessageResult = await telegram.sendMessage(context.chat.id, tgReplyMessage);
+
               if (!tgMessageResult.ok) {
                 log.error(JSON.stringify(tgMessageResult, null, 2));
                 telegram.sendMessage(context.chat.id, '잘못 들었습니다?');
@@ -62,7 +65,7 @@ async function next(offset) {
             }
           } catch (e) {
             log.error(e.stack);
-            telegram.sendMessage(tgChat.id, '잘못 들었습니다?');
+            telegram.sendMessage(context.chat.id, '잘못 들었습니다?');
           }
         }
       });
