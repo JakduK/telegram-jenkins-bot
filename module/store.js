@@ -4,7 +4,7 @@ const log = require('../lib/logger')('store');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const tableDDL = {
-  users: 'create table users (user_id num primary key, user_name text, last_command text, last_command_args text, last_command_result text)',
+  users: 'create table users (user_id num primary key, user_name text, workflow text)',
   user_jobs: 'create table user_jobs (user_id num, job text, primary key (user_id, job))'
 };
 
@@ -38,12 +38,10 @@ function store(config) {
     addJobForUser(user_id, job) {
       return async('run', 'insert into user_jobs (user_id, job) values ($user_id, $job)', {$user_id: user_id, $job: job});
     },
-    updateUserLastCommand(user_id, command, command_args, command_result) {
-      return async('run', 'update users set last_command=$command, last_command_args=$command_args, last_command_result=$command_result where user_id=$user_id', {
+    saveUserWorkflow(user_id, workflow) {
+      return async('run', 'update users set workflow=$workflow where user_id=$user_id', {
         $user_id: user_id,
-        $command: command,
-        $command_args: command_args,
-        $command_result: command_result
+        $workflow: JSON.stringify(workflow)
       })
     },
     close() {
