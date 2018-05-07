@@ -1,25 +1,37 @@
 class Jobs {
-  async run(context, name) {
-    const jobs = await context.api.jenkins.findAllJobs(name);
-    const matched = jobs.filter(job => job.name.toLowerCase().indexOf(name.toLowerCase()) !== -1).slice(0, 20);
-
-    await context.api.store.saveUserWorkflow(context.user.id, {
+  async run(context, keyword) {
+    const jobs = await context.jenkins.findAllJobs(keyword);
+    await context.store.saveUserWorkflow(context.user.id, {
       command: '/jobs',
-      args: name,
-      result: matched
+      args: keyword,
+      result: jobs
     });
-
-    return matched;
+    return jobs;
   }
 
   async toTgMessage(context, jobs) {
+    const text = [];
+
+    if (!jobs.length) {
+      text.push('🙈 없습니다.');
+    } else {
+      text.push(
+        '🔍 결과는 *50*개까지만 표시합니다.',
+        '-- '.repeat(24),
+      );
+      jobs.forEach((job, index) => {
+        text.push(`*${index + 1}.* ${job.parent ? `[${job.parent.name}](${job.parent.url}) ▹ ` : ''}[${job.name}](${job.url})`);
+      });
+      text.push(
+        '-- '.repeat(24),
+        '- 선택 : `/job <번호>`',
+        '- 실행 : `/run <번호>`',
+        '- 북마크 : `/add <번호>`'
+      );
+    }
+
     return {
-      text: [
-        '결과 개수는 2️⃣0️⃣개로 제한됩니다.',
-        '선택방법 : `/job <번호>`'
-      ].concat(jobs.map((job, index) => {
-        return `*${index + 1}.* [${job.name}](${job.url})`
-      })).join('\n'),
+      text: text.join('\n'),
       parse_mode: 'Markdown'
     };
   }
