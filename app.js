@@ -54,40 +54,50 @@ async function next(offset) {
     if (!_.isEmpty(context.message.entities)) {
       context.message.entities.forEach(async entity => {
         if (entity.type === 'bot_command') {
-          const textTokens = parseArgs(context.message.text);
-          const cmd = textTokens[0];
-          const args = textTokens[1];
+          let cmd = context.message.text.slice(entity.offset, entity.length);
+          const args = context.message.text.slice(cmd.length + 1);
+          let isMyMessage = true;
 
-          try {
-            const command = CommandManager.create(cmd);
-
-            if (!command.permitAll && (!user || !user.jenkins_ok)) {
-              telegram.sendMessage(context.chat.id, ['인증 먼저 해주세요.🔒', '`/pass <jenkins_id> <jenkins_password>`'].join('\n'));
-            } else {
-              const result = await command.run(context, args);
-              const tgReplyMessage = await command.toTgMessage(context, result);
-              await telegram.sendMessage(context.chat.id, tgReplyMessage);
+          if (context.chat.type === 'group') {
+            const botInfo = await telegram.getMe();
+            isMyMessage = cmd.indexOf(botInfo.result.username) !== -1;
+            if (isMyMessage) {
+              cmd = cmd.replace(`@${botInfo.result.username}`, '');
             }
-          } catch (err) {
-            let message;
+          }
 
-            if (err._cause) {
-              // handled error
-              message = err._cause;
+          if (isMyMessage) {
+            try {
+              const command = CommandManager.create(cmd);
 
-              if (err._by === 'jenkins' && (err.statusCode === 401 || err.statusCode === 403)) {
-                context.store.updateUserJenkinsOk(context.user.id, 0);
+              if (!command.permitAll && (!user || !user.jenkins_ok)) {
+                telegram.sendMessage(context.chat.id, ['인증 먼저 해주세요.🔒', '`/pass <jenkins_id> <jenkins_password>`'].join('\n'));
+              } else {
+                const result = await command.run(context, args);
+                const tgReplyMessage = await command.toTgMessage(context, result);
+                await telegram.sendMessage(context.chat.id, tgReplyMessage);
               }
-            } else if (err.req) {
-              // something wrong on calling external api
-              message = `❗️내부 오류\n\`${err.statusCode} ${err.statusMessage}\``;
-            } else {
-              // unhandled error
-              message = '잘못 들었습니다?🤔';
-            }
+            } catch (err) {
+              let message;
 
-            log.error(errorMessage(err));
-            await telegram.sendMessage(context.chat.id, message);
+              if (err._cause) {
+                // handled error
+                message = err._cause;
+
+                if (err._by === 'jenkins' && (err.statusCode === 401 || err.statusCode === 403)) {
+                  context.store.updateUserJenkinsOk(context.user.id, 0);
+                }
+              } else if (err.req) {
+                // something wrong on calling external api
+                message = `❗️내부 오류\n\`${err.statusCode} ${err.statusMessage}\``;
+              } else {
+                // unhandled error
+                message = '잘못 들었습니다?🤔';
+              }
+
+              log.error(errorMessage(err));
+              await telegram.sendMessage(context.chat.id, message);
+            }
           }
         }
       });
@@ -95,18 +105,6 @@ async function next(offset) {
   }
 
   return context.update.update_id + 1;
-}
-
-function parseArgs(text) {
-  const tokens = [];
-  const sepIndex = text.indexOf(' ');
-  if (sepIndex !== -1) {
-    tokens.push(text.slice(0, sepIndex));
-    tokens.push(text.slice(sepIndex + 1));
-  } else {
-    tokens.push(text);
-  }
-  return tokens;
 }
 
 function errorMessage(err) {
