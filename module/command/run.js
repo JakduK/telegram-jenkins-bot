@@ -16,7 +16,7 @@ class Run {
 
     const jobJson = await context.jenkins.getJobConfiguration(job.url);
     const jobParams = _.find(jobJson.property, prop => {
-      return prop._class === 'hudson.model.ParametersDefinitionProperty' && !_.isEmpty(prop.parameterDefinitions);
+      return !_.isEmpty(prop.parameterDefinitions);
     });
     if (jobParams) {
       job.paramters = jobParams.parameterDefinitions;

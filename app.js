@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const configPath = process.argv[2] || './config.local.js';
 const config = require(configPath);
+const HttpClient = require('./lib/httpclient');
 const Telegram = require('./lib/telegram');
 const Store = require('./module/store');
 const log = require('./lib/logger')('main');
@@ -18,10 +19,19 @@ start().catch(err => {
 });
 
 async function start() {
+  log.info(`Start on ${process.pid}`);
+
   await store.prepare();
   await store.clearUserTransients();
+  log.info('sqlite OK');
+  
+  await checkServer(config.jenkins.url);
+  log.info('Jenkins server OK');
+  
+  await checkServer(config.telegram.url);
+  log.info('Telegram server OK');
+  
   loop(0);
-  log.info(`Start on ${process.pid}`);
   log.info('Jenkins bot started.');
 }
 
@@ -33,7 +43,7 @@ async function loop(offset) {
     log.error(errorMessage(err));
   }
 
-  setTimeout(loop.bind(null, nextOffset), 250);
+  process.nextTick(loop, nextOffset);
 }
 
 async function next(offset) {
@@ -105,6 +115,16 @@ async function next(offset) {
   }
 
   return context.update.update_id + 1;
+}
+
+async function checkServer(url) {
+  try {
+    await new HttpClient({url}).get();
+  } catch (e) {
+    if (!e.req) {
+      throw e;
+    }
+  }
 }
 
 function errorMessage(err) {
