@@ -81,7 +81,7 @@ async function next(offset) {
               const command = CommandManager.create(cmd);
 
               if (!command.permitAll && (!user || !user.jenkins_ok)) {
-                telegram.sendMessage(context.chat.id, ['인증 먼저 해주세요.🔒', '`/pass <jenkins_id> <jenkins_password>`'].join('\n'));
+                await telegram.sendMessage(context.chat.id, ['인증 먼저 해주세요.🔒', '`/pass <jenkins_id> <jenkins_password>`'].join('\n'));
               } else {
                 const result = await command.run(context, args);
                 const tgReplyMessage = await command.toTgMessage(context, result);
