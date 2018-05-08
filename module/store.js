@@ -2,8 +2,8 @@ const log = require('../lib/logger')('store');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const tableDDL = {
-  users: 'create table users (user_id num primary key, user_name text, workflow text, jenkins_ok integer)',
-  user_jobs: 'create table user_jobs (user_id num, job_id text, job text, primary key (user_id, job_id))'
+  users: 'create table users (user_id text primary key, user_name text, workflow text, jenkins_ok integer)',
+  user_jobs: 'create table user_jobs (user_id text, job_url text, job text, primary key (user_id, job_url))'
 };
 
 class Store {
@@ -56,9 +56,9 @@ class Store {
     if (!job || !job.url) {
       throw new Error(`Invalid job object. job=${JSON.stringify(job)}`);
     }
-    return this._async('run', 'insert into user_jobs (user_id, job_id, job) values ($user_id, $job_id, $job)', {
+    return this._async('run', 'insert into user_jobs (user_id, job_url, job) values ($user_id, $job_url, $job)', {
       $user_id: user_id,
-      $job_id: job.url,
+      $job_url: job.url,
       $job: JSON.stringify(job)
     });
   }
@@ -67,9 +67,9 @@ class Store {
     if (!job || !job.url) {
       throw new Error(`Invalid job object. job=${JSON.stringify(job)}`);
     }
-    return this._async('run', 'delete from user_jobs where user_id=$user_id and job_id=$job_id', {
+    return this._async('run', 'delete from user_jobs where user_id=$user_id and job_url=$job_url', {
       $user_id: user_id,
-      $job_id: job.url
+      $job_url: job.url
     });
   }
 
