@@ -7,7 +7,7 @@ const tableDDL = {
 };
 
 class Store {
-  constructor(config) {
+  constructor(config = {}) {
     this.db = new sqlite3.Database(config.dbPath || path.join(process.cwd(), 'local.db'));
   }
 
