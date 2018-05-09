@@ -4,13 +4,13 @@
 ###Available commands
 ```
 my : Print my job bookmars
-jobs - Find jobs (/jobs <keyword or blank>)
-job - Select job (/job <number>)
-run - Run job (/run <number> or after /job command)
-submit - Run job with parameters (after /run command)
-add - Add Job bookmark (/add <number> or after /job command)
-rm - Remove Job bookmark (/rm <number> or after /job command)
-/pass Jenkins Authorization (/pass <your jenkinds_id> <your jenkins_password>)
+jobs : Find Jobs (/jobs <keyword or blank>)
+job : Select a Job (/job <number>)
+run : Run Job (/run <number>)
+submit : Run Job with parameters (after /run command)
+add : Add a Job bookmark (/add <number>)
+rm : Remove a Job bookmark (/rm <number>)
+pass : Jenkins Authorization (/pass <your jenkinds_id> <your jenkins_password>)
 ```
 
 ###Config file spec

@@ -1,4 +1,5 @@
 const _ = require('lodash');
+
 class Run {
   async run(context, num) {
     const user = await context.store.findUser(context.user.id);
@@ -43,11 +44,11 @@ class Run {
     if (!jobParams) { 
       text.push(
         job.started
-        ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}/${job.nextBuildNumber}) 시작됐습니다.`
+        ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}${job.nextBuildNumber}) 시작됐습니다.`
         : `🔴 [${job.name}](${job.url}) 요청중 오류로 실행하지 못했습니다.`
       );
     } else {
-      text.push(`✅ [${job.name}](${job.url}) 파라미터를 요구합니다.`);
+      text.push(`✅ [${job.name}](${job.url}) 파라미터가 필요합니다.`);
 
       for (const param of jobParams.parameterDefinitions) {
         text.push(
@@ -58,15 +59,21 @@ class Run {
         );
 
         if (param.type === 'RunParameterDefinition') {
-          const recentBuilds = job.builds.slice(0, 5);
-          const buildDetailsList = await Promise.all(recentBuilds.map(async build => {
-            return context.jenkins.getJobConfiguration(build.url);
-          }));
+          const buildDetailsList = await context.jenkins.getSuccessBuilds(`/job/${param.projectName.replace('/', '/job/')}`);
+          const defaultBuild = _.find(buildDetailsList, build => build.number === param.defaultParameterValue.number) || {};
 
           text.push(
-            `- 기본값 : \`${param.defaultParameterValue.jobName || ''}#${param.defaultParameterValue.number || ''}\``,
+            `- 기본값 :`,
+            `  \`${param.projectName}#${defaultBuild.number}\` / \`${defaultBuild.displayName}\``,
             '- 택1 :',
-            `\`${buildDetailsList.map(build => `${build.displayName}#${build.number}`).join('\n')}\``
+            `${buildDetailsList.map(build => {
+              return `  \`${param.projectName}#${build.number}\` / \`${build.displayName}\``;
+            }).join('\n')}`,
+            '',
+            '⚠️ 위 기본값과 택1은 `foo / bar` 형식으로,',
+            '`foo` 부분만 전달하세요.',
+            '`bar` 부분은 값을 설명하는 텍스트입니다.',
+            '`ex) param=foo`'
           );
         } else {
           text.push(`- 기본값 : \`${param.defaultParameterValue.value}\``);
@@ -82,10 +89,12 @@ class Run {
 
       text.push(
         '-- '.repeat(24),
-        '`/submit 파라미터A=value 파라미터B=value 파라미터...`',
-        '위형식으로 한줄로 입력해주세요. 생략하면 기본값이 적용됩니다.',
+        '`/submit` 커맨드로 파라미터를 전달하여 실행하세요.',
+        '`ex) /submit param_1=value param_2=value param...`',
+        '파라미터를 생략하면 기본값이 적용됩니다.',
+        '`ex) /submit`',
         '공백이 포함된 값은 따옴표로 감싸주세요.',
-        'ex) paramA="1 2 3" paramB=\'1 2 3\''
+        '`ex) param_1="1 2 3" param_2=\'1 2 3\'`'
       );
     }
 

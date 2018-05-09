@@ -12,7 +12,7 @@ class Submit {
     }
 
     const selectedJob = workflow.result;
-    const jobDetails = context.jenkins.getJobConfiguration(selectedJob.url);
+    const jobDetails = await context.jenkins.getJobConfiguration(selectedJob.url);
     const inputParams = KeyValueParser.parse(args);
     jobDetails.submitted = inputParams;
 
@@ -29,7 +29,7 @@ class Submit {
   async toTgMessage(context, job) {
     const text = [
       job.started
-      ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}/${job.nextBuildNumber}) 시작됐습니다.`
+      ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}${job.nextBuildNumber}) 시작됐습니다.`
       : `🔴 [${job.name}](${job.url}) 요청중 오류로 실행하지 못했습니다.`
     ];
 

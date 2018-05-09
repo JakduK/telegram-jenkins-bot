@@ -6,11 +6,14 @@ class Context {
     this.store = store;
     this.userJenkinsCredentialMap = userJenkinsCredentialMap;
     this.update = update;
-    this.message = update.message;
-    this.chat = update.message ? update.message.chat : null;
-    this.callback_query = update.callback_query;
-    this.user = (update.message || update.callback_query).from;
-    this.jenkins = new Jenkins({url: config.jenkins.url, credential: userJenkinsCredentialMap.get(this.user ? this.user.id : '')});
+    this.message = update.message || update.edited_message;
+    this.message.edited = !!update.edited_message;
+    this.chat = this.message ? this.message.chat : null;
+    this.user = this.message.from;
+    this.jenkins = new Jenkins({
+      url: this.config.jenkins.url,
+      credential: this.userJenkinsCredentialMap.get(this.user ? this.user.id : '')
+    });
   }
 }
 

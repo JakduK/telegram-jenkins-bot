@@ -57,7 +57,7 @@ async function next(offset) {
 
   log.info(`Get update from telegram : update_id=${context.update.update_id}, from=${context.user.id}, user=${user ? user.user_name : 'unknown'}`);
 
-  if (context.message) {
+  if (context.message && !context.message.edited) {
     log.info(`-- message obtained : text=${context.message.text}`);
     log.debug(`-- ${JSON.stringify(context.message, null, 2)}`);
 
