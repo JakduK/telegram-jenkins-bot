@@ -1,5 +1,6 @@
 #Jenkins Bot for Telegram
 
+
 ###Available commands
 ```
 my : Print my job bookmars
@@ -17,11 +18,12 @@ rm - Remove Job bookmark (/rm <number> or after /job command)
 module.exports = {
   telegram: {
     url: 'https://api.telegram.org',
-    token: 'token for your'
+    token: 'token for yours'
   },
   jenkins: {
-    url: 'url for your'
+    url: 'url for yours'
   },
+  // optional
   db: {
     dbPath: 'local.db'
   }

@@ -3,60 +3,75 @@ class Run {
   async run(context, num) {
     const user = await context.store.findUser(context.user.id);
     const workflow = JSON.parse(user.workflow);
-    let job;
+    let selectedJob;
 
     if (workflow.command === '/job' || workflow.command === '/run') {
-      job = workflow.result;
+      selectedJob = workflow.result;
     } else if (workflow.command === '/my' || workflow.command === '/jobs') {
       const jobs = workflow.result;
-      job = jobs[parseInt(num) - 1];
+      selectedJob = jobs[parseInt(num) - 1];
     } else {
       throw new Error(`Workflow command mismatch. command=${workflow.command}`);
     }
 
-    const jobJson = await context.jenkins.getJobConfiguration(job.url);
-    const jobParams = _.find(jobJson.property, prop => {
+    const jobDetails = await context.jenkins.getJobConfiguration(selectedJob.url);
+    const hasParam = _.find(jobDetails.property, prop => {
       return !_.isEmpty(prop.parameterDefinitions);
     });
-    if (jobParams) {
-      job.paramters = jobParams.parameterDefinitions;
-    }
 
-    if (!job.paramters) {
-      await context.jenkins.runJob(job.url);
-      job.started = true;
-      context.store.clearUserWorkflow(user.user_id);
-    } else {
+    if (hasParam) {
       context.store.saveUserWorkflow(user.user_id, {
         command: '/run',
         args: num,
-        result: job
+        result: jobDetails
       });
+    } else {
+      await context.jenkins.runJob(selectedJob.url);
+      jobDetails.started = true;
+      context.store.clearUserWorkflow(user.user_id);
     }
 
-    return job;
+    return jobDetails;
   }
 
   async toTgMessage(context, job) {
-    if (job.paramters) {
-      const text = [`✅ [${job.name}](${job.url}) 파라미터를 요구합니다.`];
-      for (const param of job.paramters) {
+    const jobParams = _.find(job.property, prop => {
+      return !_.isEmpty(prop.parameterDefinitions);
+    });
+    const text = [];
+
+    if (!jobParams) { 
+      text.push(
+        job.started
+        ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}/${job.nextBuildNumber}) 시작됐습니다.`
+        : `🔴 [${job.name}](${job.url}) 요청중 오류로 실행하지 못했습니다.`
+      );
+    } else {
+      text.push(`✅ [${job.name}](${job.url}) 파라미터를 요구합니다.`);
+
+      for (const param of jobParams.parameterDefinitions) {
         text.push(
           '-- '.repeat(24),
           `- 파라미터 이름 : \`${param.name}\``,
           `- 파라미터 타입 : \`${param.type}\``,
           `- 설명 : \`${param.description}\``,
         );
+
         if (param.type === 'RunParameterDefinition') {
-          const paramJob = await context.jenkins.getJobConfiguration(`/job/${param.projectName.replace('/', '/job/')}`);
+          const recentBuilds = job.builds.slice(0, 5);
+          const buildDetailsList = await Promise.all(recentBuilds.map(async build => {
+            return context.jenkins.getJobConfiguration(build.url);
+          }));
+
           text.push(
             `- 기본값 : \`${param.defaultParameterValue.jobName || ''}#${param.defaultParameterValue.number || ''}\``,
             '- 택1 :',
-            `\`${paramJob.builds.slice(0, 5).map(build => `${param.projectName}#${build.number}`).join('\n')}\``
+            `\`${buildDetailsList.map(build => `${build.displayName}#${build.number}`).join('\n')}\``
           );
         } else {
-          text.push(`- 기본값 : \`${param.defaultParameterValue.value || ''}\``);
+          text.push(`- 기본값 : \`${param.defaultParameterValue.value}\``);
         }
+
         if (param.type === 'ChoiceParameterDefinition') {
           text.push(
             `- 택1 :`,
@@ -64,6 +79,7 @@ class Run {
           );
         }
       }
+
       text.push(
         '-- '.repeat(24),
         '`/submit 파라미터A=value 파라미터B=value 파라미터...`',
@@ -71,16 +87,12 @@ class Run {
         '공백이 포함된 값은 따옴표로 감싸주세요.',
         'ex) paramA="1 2 3" paramB=\'1 2 3\''
       );
-      return {
-        text:  text.join('\n'),
-        parse_mode: 'Markdown'
-      }
-    } else {
-      return {
-        text: `${job.started ? '🔵' : '🔴'} [${job.name}](${job.url}) ${job.started ? '시작됨' : '실행실패'}.`,
-        parse_mode: 'Markdown'
-      }
     }
+
+    return {
+      text: text.join('\n'),
+      parse_mode: 'Markdown'
+    };
   }
 }
 

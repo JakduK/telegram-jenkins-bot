@@ -11,25 +11,32 @@ class Submit {
       throw new Error(`Workflow command mismatch. command=${workflow.command}`);
     }
 
-    const job = workflow.result;
-    const params = KeyValueParser.parse(args);
-    job.submitted = params;
+    const selectedJob = workflow.result;
+    const jobDetails = context.jenkins.getJobConfiguration(selectedJob.url);
+    const inputParams = KeyValueParser.parse(args);
+    jobDetails.submitted = inputParams;
 
     try {
-      await context.jenkins.runJob(job.url, params);
-      job.started = true;
+      await context.jenkins.runJob(jobDetails.url, inputParams);
+      jobDetails.started = true;
     } catch (err) {
       log.error(err.req ? `${err.responseText}` : (err.stack || err));
     }
 
-    return job;
+    return jobDetails;
   }
 
   async toTgMessage(context, job) {
-    const text = [`${job.started ? '🔵' : '🔴'} [${job.name}](${job.url}) ${job.started ? '시작됨' : '실행실패'}.`];
+    const text = [
+      job.started
+      ? `🔵 [${job.name}#${job.nextBuildNumber}](${job.url}/${job.nextBuildNumber}) 시작됐습니다.`
+      : `🔴 [${job.name}](${job.url}) 요청중 오류로 실행하지 못했습니다.`
+    ];
+
     if (!_.isEmpty(job.submitted)) {
       text.push(
-        '- 전달 파라미터',
+        '-- '.repeat(24),
+        '전달 파라미터',
         '-- '.repeat(24),
         ..._.map(job.submitted, (value, key)  => {
           return `- \`${key} : ${value}\``;
@@ -37,6 +44,7 @@ class Submit {
         '-- '.repeat(24)
       );
     }
+
     return {
       text: text.join('\n'),
       parse_mode: 'Markdown'

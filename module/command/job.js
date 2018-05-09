@@ -18,7 +18,7 @@ class Job {
     return {
       text: [
         `✅ *${job.name}*`,
-        '원하시는 작업을 선택하세요.',
+        '-- '.repeat(24),
         '- 실행 : `/run`',
         job.by === '/my' ? '- 북마크 해제 : `/rm`' : '- 북마크 : `/add`'
       ].join('\n'),
