@@ -29,11 +29,12 @@ class Submit {
     const text = [`${job.started ? '🔵' : '🔴'} [${job.name}](${job.url}) ${job.started ? '시작됨' : '실행실패'}.`];
     if (!_.isEmpty(job.submitted)) {
       text.push(
-        '---',
-        '파라미터',
+        '- 전달 파라미터',
+        '-- '.repeat(24),
         ..._.map(job.submitted, (value, key)  => {
-          return `- ${key} : ${value}`;
-        })
+          return `- \`${key} : ${value}\``;
+        }),
+        '-- '.repeat(24)
       );
     }
     return {

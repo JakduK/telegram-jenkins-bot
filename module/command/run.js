@@ -43,9 +43,9 @@ class Run {
       for (const param of job.paramters) {
         text.push(
           '-- '.repeat(24),
-          `- 파라미터 이름 : *${param.name}*`,
-          `- 파라미터 타입 : ${param.type}`,
-          `- 설명 : ${param.description}`,
+          `- 파라미터 이름 : \`${param.name}\``,
+          `- 파라미터 타입 : \`${param.type}\``,
+          `- 설명 : \`${param.description}\``,
         );
         if (param.type === 'RunParameterDefinition') {
           const paramJob = await context.jenkins.getJobConfiguration(`/job/${param.projectName.replace('/', '/job/')}`);
@@ -67,8 +67,9 @@ class Run {
       text.push(
         '-- '.repeat(24),
         '`/submit 파라미터A=value 파라미터B=value 파라미터...`',
-        '형식으로 한줄로 입력해주세요. 생략하면 기본값이 적용됩니다.',
-        '공백이 포함된 값은 쌍따옴표로 감싸주세요. ex) param="1 2 3"'
+        '위형식으로 한줄로 입력해주세요. 생략하면 기본값이 적용됩니다.',
+        '공백이 포함된 값은 따옴표로 감싸주세요.',
+        'ex) paramA="1 2 3" paramB=\'1 2 3\''
       );
       return {
         text:  text.join('\n'),
