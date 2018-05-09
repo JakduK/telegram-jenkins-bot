@@ -21,7 +21,8 @@ class Add {
   async toTgMessage(context, job) {
     return {
       text: [
-        `✅ *${job.name}* 북마크 완료!`,
+        `✅ [${job.name}](${job.url}) 북마크 완료!`,
+        '-- '.repeat(24),
         '- 확인 : `/my`'
       ].join('\n'),
       parse_mode: 'Markdown'

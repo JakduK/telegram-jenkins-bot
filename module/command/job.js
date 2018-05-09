@@ -17,7 +17,7 @@ class Job {
   async toTgMessage(context, job) {
     return {
       text: [
-        `✅ *${job.name}*`,
+        `✅ [${job.name}](${job.url})`,
         '-- '.repeat(24),
         '- 실행 : `/run`',
         job.by === '/my' ? '- 북마크 해제 : `/rm`' : '- 북마크 : `/add`'

@@ -27,7 +27,7 @@ class Pass {
 
   async toTgMessage(context, user) {
     return {
-      text: user && user.jenkins_ok ? '인증완료.🎯' : '땡! 틀렸습니다.😜'
+      text: user && user.jenkins_ok ? '인증완료.🎯' : '땡! 틀렸습니다.🙊'
     };
   }
 

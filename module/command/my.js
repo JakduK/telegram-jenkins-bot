@@ -17,7 +17,7 @@ class My {
       text.push('🙈 없습니다.');
     } else {
       text.push(
-        `🗄 *${user.user_name.trim()}*님의 Job목록`,
+        `⭐️ *${user.user_name.trim()}*님의 북마크목록`,
         '-- '.repeat(24),
       );
       jobs.forEach((job, index) => text.push(`*${index + 1}.* [${job.name}](${job.url})`));
