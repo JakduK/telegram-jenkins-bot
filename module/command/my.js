@@ -1,6 +1,6 @@
 class My {
   async run(context) {
-    const list = (await context.store.findAllJobsByUserId(context.user.id)).map(userJob => JSON.parse(userJob.job));
+    const list = await context.store.findAllJobsByUserId(context.user.id);
     await context.store.saveUserWorkflow(context.user.id, {
       command: '/my',
       args: null,

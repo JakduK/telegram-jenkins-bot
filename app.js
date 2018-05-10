@@ -24,13 +24,16 @@ async function start() {
   await store.prepare();
   await store.clearUserTransients();
   log.info('sqlite OK');
-  
+
+  log.info('Wait for Jenkins server Ok');
   await checkServer(config.jenkins.url);
-  log.info('Jenkins server OK');
-  
-  await checkServer(config.telegram.url);
-  log.info('Telegram server OK');
-  
+  log.info('Jenkins server Ok');
+
+  log.info('Wait for Telegram server Ok');
+  const bot = await telegram.getMe();
+  config.telegram.bot = bot.result;
+  log.info('Telegram server Ok');
+
   loop(0);
   log.info('Jenkins bot started.');
 }
@@ -69,10 +72,10 @@ async function next(offset) {
           let isMyMessage = true;
 
           if (context.chat.type === 'group') {
-            const botInfo = await telegram.getMe();
-            isMyMessage = cmd.indexOf(botInfo.result.username) !== -1;
+            const botName = context.config.telegram.bot.username;
+            isMyMessage = cmd.indexOf(botName) !== -1;
             if (isMyMessage) {
-              cmd = cmd.replace(`@${botInfo.result.username}`, '');
+              cmd = cmd.replace(`@${botName}`, '');
             }
           }
 
@@ -121,7 +124,7 @@ async function checkServer(url) {
   try {
     await new HttpClient({url}).get();
   } catch (e) {
-    if (!e.req) {
+    if (!e.req || e.statusCode >= 500) {
       throw e;
     }
   }

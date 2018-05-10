@@ -44,8 +44,11 @@ class Store {
     return this._async('get', 'select * from users where user_id=$user_id', {$user_id: user_id});
   }
 
-  findAllJobsByUserId(user_id) {
-    return this._async('all', 'select * from user_jobs where user_id=$user_id order by created_at', {$user_id: user_id});
+  async findAllJobsByUserId(user_id) {
+    const raw = await this._async('all', 'select * from user_jobs where user_id=$user_id order by created_at', {
+      $user_id: user_id
+    });
+    return raw.map(userJob => JSON.parse(userJob.job));
   }
 
   addUser(user_id, user_name) {
@@ -108,9 +111,13 @@ class Store {
   }
 
   _async(method, sql, params) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       this.db[method](sql, params, (err, result) => {
-        resolve(err || result);
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
       });
     });
   }
