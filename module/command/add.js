@@ -8,17 +8,28 @@ class Add {
     }
 
     const jobs = workflow.result;
-    const job = jobs[parseInt(num) - 1];
+    const selectedJobs = num.split(' ')
+      .reduce((accum, num) => {
+        const job = jobs[parseInt(num) - 1];
+        if (job) {
+          accum.push(job);
+        }
+        return accum;
+      }, []);
 
-    await context.store.addJobBookmark(context.user.id, job);
+    await Promise.all(selectedJobs.map(job => context.store.addJobBookmark(context.user.id, job)));
 
-    return job;
+    return selectedJobs;
   }
 
-  async toTgMessage(context, job) {
+  async toTgMessage(context, jobs) {
     return {
       text: [
-        `✅ [${job.name}](${job.url}) 북마크 완료!`,
+        `✅ 북마크 완료!`,
+        '-- '.repeat(24),
+        `${jobs.map(job => {
+          return `- [${job.name}](${job.url })`;
+        }).join('\n')}`,
         '-- '.repeat(24),
         '- 확인 : `/my`'
       ].join('\n'),

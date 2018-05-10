@@ -2,8 +2,8 @@ const log = require('../lib/logger')('store');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const tableDDL = {
-  users: 'create table users (user_id text primary key, user_name text, workflow text, jenkins_ok integer)',
-  user_jobs: 'create table user_jobs (user_id text, job_url text, job text, primary key (user_id, job_url))'
+  users: 'create table users (user_id text primary key, user_name text, workflow text, jenkins_ok integer, created_at integer)',
+  user_jobs: 'create table user_jobs (user_id text, job_url text, job text, created_at integer, primary key (user_id, job_url))'
 };
 
 class Store {
@@ -16,7 +16,12 @@ class Store {
     for (let name in tableDDL) {
       promises.push(new Promise((resolve, reject) => {
         this.db.get('select * from sqlite_master where name=$name', {$name: name}, (err, result) => {
-          if (!result) {
+          if (err) {
+            reject(err);
+            log.error(err);
+          } else if (result) {
+            resolve();
+          } else {
             log.info(`${name} table not exists.`);
             this.db.run(tableDDL[name], (err, result) => {
               if (!err) {
@@ -25,11 +30,9 @@ class Store {
               } else {
                 log.error(`Failed to create ${name} table.`);
                 log.error(err);
-                reject();
+                reject(err);
               }
             });
-          } else {
-            resolve();
           }
         });
       }));
@@ -42,13 +45,14 @@ class Store {
   }
 
   findAllJobsByUserId(user_id) {
-    return this._async('all', 'select * from user_jobs where user_id=$user_id', {$user_id: user_id});
+    return this._async('all', 'select * from user_jobs where user_id=$user_id order by created_at', {$user_id: user_id});
   }
 
   addUser(user_id, user_name) {
-    return this._async('run', 'insert into users (user_id, user_name, jenkins_ok) values ($user_id, $user_name, 1)', {
+    return this._async('run', 'insert into users (user_id, user_name, jenkins_ok, created_at) values ($user_id, $user_name, 1, $created_at)', {
       $user_id: user_id,
-      $user_name: user_name
+      $user_name: user_name,
+      $created_at: Date.now()
     });
   }
 
@@ -56,10 +60,11 @@ class Store {
     if (!job || !job.url) {
       throw new Error(`Invalid job object. job=${JSON.stringify(job)}`);
     }
-    return this._async('run', 'insert into user_jobs (user_id, job_url, job) values ($user_id, $job_url, $job)', {
+    return this._async('run', `insert into user_jobs (user_id, job_url, job, created_at) values ($user_id, $job_url, $job, $created_at)`, {
       $user_id: user_id,
       $job_url: job.url,
-      $job: JSON.stringify(job)
+      $job: JSON.stringify(job),
+      $created_at: Date.now()
     });
   }
 

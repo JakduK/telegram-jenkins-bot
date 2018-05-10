@@ -10,8 +10,8 @@ class Help {
       text: [
         'ℹ️ 도움말',
         '-- '.repeat(24),
-        '/my - 내 Job목록',
-        '/jobs - Job검색 최대 50개(/jobs <키워드 또는 생략>)',
+        '/my - 내 Job북마크 목록',
+        '/jobs - Job검색 최대 40개(/jobs <키워드 또는 생략>)',
         '/run - Job실행(/run <번호>)',
         '/submit - 파라미터 전달하여 Job실행(/run커맨드 실행후 가능)',
         '/add - Job북마크(/add <번호>)',
