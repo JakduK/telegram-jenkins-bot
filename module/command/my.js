@@ -23,9 +23,8 @@ class My {
       jobs.forEach((job, index) => text.push(`*${index + 1}.* [${job.name}](${job.url})`));
       text.push(
         '-- '.repeat(24),
-        '- 선택 : `/job <번호>`',
         '- 실행 : `/run <번호>`',
-        '- 북마크 제거 : `/rm <번호>`'
+        '- 북마크 해제 : `/rm <번호>`'
       );
     }
 

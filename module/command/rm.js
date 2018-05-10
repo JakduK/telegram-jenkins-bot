@@ -2,19 +2,16 @@ class Rm {
   async run(context, num) {
     const user = await context.store.findUser(context.user.id);
     const workflow = JSON.parse(user.workflow);
-    let job;
 
-    if (workflow.command === '/job') {
-      job = workflow.result;
-    } else if (workflow.command === '/my') {
-      const jobs = workflow.result;
-      job = jobs[parseInt(num) - 1];
-    } else {
+    if (workflow.command !== '/my') {    
       throw new Error(`Workflow command mismatch. command=${workflow.command}`);
     }
 
+    const jobs = workflow.result;
+    const job = jobs[parseInt(num) - 1];
+
     await context.store.removeJobBookmark(context.user.id, job);
-    await context.store.clearUserWorkflow(context.user.id);
+
     return job;
   }
 
