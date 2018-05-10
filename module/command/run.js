@@ -64,13 +64,13 @@ class Run {
 
           text.push(
             `- 기본값 :`,
-            `  \`${param.projectName}#${defaultBuild.number}\` / \`${defaultBuild.displayName}\``,
+            `\`${param.projectName}#${defaultBuild.number}\` */* \`${defaultBuild.displayName}\``,
             '- 택1 :',
             `${buildDetailsList.map(build => {
-              return `  \`${param.projectName}#${build.number}\` / \`${build.displayName}\``;
+              return `\`${param.projectName}#${build.number}\` */* \`${build.displayName}\``;
             }).join('\n')}`,
             '',
-            '⚠️ 위 기본값과 택1은 "`foo` / `bar`" 형식으로,',
+            '⚠️ 위 기본값과 택1은 "`foo` */* `bar`" 형식으로,',
             '`foo` 부분만 전달하세요.',
             '`bar` 부분은 값을 설명하는 텍스트입니다.',
             '`ex) param=foo`'
@@ -91,9 +91,9 @@ class Run {
         '-- '.repeat(24),
         '`/submit` 커맨드로 파라미터를 전달하여 실행하세요.',
         '생략한 파라미터는 기본값이 적용됩니다.',
-        '`ex) /submit param_1=value param_2=value param...`',
+        '`ex) /submit param1=value param_2=value param...`',
         '공백이 포함된 값은 따옴표로 감싸주세요.',
-        '`ex) param_1="1 2 3" param_2=\'1 2 3\'`'
+        '`ex) param1="1 2 3" param2=\'1 2 3\'`'
       );
     }
 
