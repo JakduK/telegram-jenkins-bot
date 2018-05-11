@@ -15,17 +15,14 @@ class Jobs {
     if (!jobs.length) {
       text.push('🙈 없습니다.');
     } else {
-      text.push(
-        '🔍 결과는 *40*개까지 표시합니다.',
-        '-- '.repeat(24),
-      );
+      text.push('🔍 결과는 *40*개까지 표시합니다.', '');
       jobs.forEach((job, index) => {
         text.push(`*${index + 1}.* ${job.parent ? `[${job.parent.name}](${job.parent.url}) ▹ ` : ''}[${job.name}](${job.url})`);
       });
       text.push(
-        '-- '.repeat(24),
-        '- 실행 : `/run <번호>`',
-        '- 북마크 : `/add <번호>`'
+        '',
+        '`/run <번호>` - 실행',
+        '`/add <번호>` - 북마크'
       );
     }
 

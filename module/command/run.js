@@ -52,10 +52,10 @@ class Run {
 
       for (const param of jobParams.parameterDefinitions) {
         text.push(
-          '-- '.repeat(24),
-          `- 파라미터 이름 : \`${param.name}\``,
-          `- 파라미터 타입 : \`${param.type}\``,
-          `- 설명 : \`${param.description}\``,
+          '',
+          `파라미터 - *${param.name}*`,
+          `파라미터 타입 - \`${param.type}\``,
+          `설명 - \`${param.description}\``,
         );
 
         if (param.type === 'RunParameterDefinition') {
@@ -63,35 +63,33 @@ class Run {
           const defaultBuild = _.find(buildDetailsList, build => build.number === param.defaultParameterValue.number) || {};
 
           text.push(
-            `- 기본값 :`,
-            `\`${param.projectName}#${defaultBuild.number}\` */* \`${defaultBuild.displayName}\``,
-            '- 택1 :',
+            `기본값 - \`${param.projectName}#${defaultBuild.number}\` */* \`${defaultBuild.displayName}\``,
+            '택1 -',
             `${buildDetailsList.map(build => {
               return `\`${param.projectName}#${build.number}\` */* \`${build.displayName}\``;
             }).join('\n')}`,
-            '',
-            '⚠️ 위 기본값과 택1은 "`foo` */* `bar`" 형식으로,',
-            '`foo` 부분만 전달하세요.',
-            '`bar` 부분은 값을 설명하는 텍스트입니다.',
+            '⚠️주의 - 위 기본값과 택1은 "`foo` */* `bar`" 형식입니다.',
+            '"`foo`" 부분만 전달하세요.',
+            '"`bar`" 부분은 값을 설명하는 텍스트입니다.',
             '`ex) param=foo`'
           );
         } else {
-          text.push(`- 기본값 : \`${param.defaultParameterValue.value}\``);
+          text.push(`기본값 - \`${param.defaultParameterValue.value}\``);
         }
 
         if (param.type === 'ChoiceParameterDefinition') {
           text.push(
-            `- 택1 :`,
+            `택1 -`,
             `\`${param.choices.join('\n')}\``
           );
         }
       }
 
       text.push(
-        '-- '.repeat(24),
+        '',
         '`/submit` 커맨드로 파라미터를 전달하여 실행하세요.',
         '생략한 파라미터는 기본값이 적용됩니다.',
-        '`ex) /submit param1=value param_2=value param...`',
+        '`ex) /submit param1=value param2=value param...`',
         '공백이 포함된 값은 따옴표로 감싸주세요.',
         '`ex) param1="1 2 3" param2=\'1 2 3\'`'
       );

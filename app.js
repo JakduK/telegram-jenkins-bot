@@ -25,11 +25,11 @@ async function start() {
   await store.clearUserTransients();
   log.info('sqlite OK');
 
-  log.info('Wait for Jenkins server Ok');
+  log.info('Waiting for Jenkins server Ok');
   await checkServer(config.jenkins.url);
   log.info('Jenkins server Ok');
 
-  log.info('Wait for Telegram server Ok');
+  log.info('Waiting for Telegram server Ok');
   const bot = await telegram.getMe();
   config.telegram.bot = bot.result;
   log.info('Telegram server Ok');

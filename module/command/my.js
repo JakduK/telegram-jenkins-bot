@@ -16,15 +16,12 @@ class My {
     if (!jobs.length) {
       text.push('🙈 없습니다.');
     } else {
-      text.push(
-        `⭐️ *${user.user_name.trim()}*님의 북마크목록`,
-        '-- '.repeat(24),
-      );
+      text.push(`${user.user_name.trim()}님의 ⭐북마크 목록`, '');
       jobs.forEach((job, index) => text.push(`*${index + 1}.* [${job.name}](${job.url})`));
       text.push(
-        '-- '.repeat(24),
-        '- 실행 : `/run <번호>`',
-        '- 북마크 해제 : `/rm <번호>`'
+        '',
+        '`/run <번호>` - 실행',
+        '`/rm <번호>` - 북마크 해제'
       );
     }
 

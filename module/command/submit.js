@@ -35,13 +35,11 @@ class Submit {
 
     if (!_.isEmpty(job.submitted)) {
       text.push(
-        '-- '.repeat(24),
+        '',
         '전달 파라미터',
-        '-- '.repeat(24),
         ..._.map(job.submitted, (value, key)  => {
           return `- \`${key} : ${value}\``;
-        }),
-        '-- '.repeat(24)
+        })
       );
     }
 

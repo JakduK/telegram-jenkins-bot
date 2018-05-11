@@ -26,12 +26,12 @@ class Rm {
     return {
       text: [
         `✅ 북마크 해제 완료!`,
-        '-- '.repeat(24),
+        '',
         `${jobs.map(job => {
-          return `- [${job.name}](${job.url})`;
+          return `[${job.name}](${job.url})`;
         }).join('\n')}`,
-        '-- '.repeat(24),
-        '- 확인 : `/my`'
+        '',
+        '`/my` - 북마크 목록'
       ].join('\n'),
       parse_mode: 'Markdown'
     }

@@ -5,13 +5,11 @@ class Start {
 
   async run() {}
   
-  async toTgMessage(context) {
+  async toTgMessage() {
     return {
       text: [
-        '안녕하세요',
-        '-- '.repeat(24),
-        '/help - 커맨드 도움말 보기',
-        '-- '.repeat(24)
+        '안녕하세요👋👋👋',
+        '/help - 커맨드 도움말 보기'
       ].join('\n')
     };
   }
