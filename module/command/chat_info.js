@@ -9,7 +9,7 @@ class ChatInfo {
     const user = await context.store.findUser(context.user.id);
     return {
       text: [
-        `${user ? `${user.user_name.trim()}님의 ` : '당신의 '} 텔레그래 아이디 : *${context.user.id}*`,
+        `${user ? `${user.user_name.trim()}님의 ` : '당신의 '} 텔레그램 아이디 : *${context.user.id}*`,
         `현재 대화방 아이디 : *${context.chat.id}*`
       ].join('\n'),
       parse_mode: 'Markdown'
