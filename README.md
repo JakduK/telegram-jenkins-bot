@@ -1,7 +1,7 @@
-#Jenkins Bot for Telegram
+# Telegram Jenkins Bot for self hosting
 
 
-###Available commands
+### Available commands
 ```
 my : Print my job bookmars
 jobs : Find Jobs (/jobs <keyword or blank>)
@@ -13,7 +13,7 @@ pass : Jenkins Authorization (/pass <your jenkinds_id> <your jenkins_password>)
 chat_id : Query chat information
 ```
 
-###Config file spec
+### Config file spec
 ```
 module.exports = {
   telegram: {
@@ -30,7 +30,7 @@ module.exports = {
 };
 ```
 
-###Start
+### Start
 ```
 node app.js config.js
 ```
