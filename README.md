@@ -2,16 +2,16 @@
 
 
 ### Available commands
-```
-my - Print my job bookmars
-jobs - Find Jobs (/jobs <keyword or blank>)
-run - Run Job (/run <number>)
-submit - Run Job with parameters (after /run command)
-add - Add a Job bookmark (/add <number>)
-rm - Remove a Job bookmark (/rm <number>)
-pass - Jenkins Authorization (/pass <your jenkinds_id> <your jenkins_password>)
-chat_id - Query chat information
-```
+|Command|Description|
+|-------|-----------|
+|my|Print my Job bookmars|
+|jobs|Find Jobs `/jobs <keyword or blank>`|
+|run|Run Job `/run <number>`|
+|submit|Run Job after submit parameters `after /run`|
+|add|Add Job bookmarks `/add <number> <number> <number> ...`|
+|rm|Remove Job bookmarks `/rm <number> <number> <number> ...`|
+|pass|Authorize Jenkins `/pass <your jenkinds_id> <your jenkins_password>`|
+|chat_info|Query Chat information|
 
 ### Config file spec
 ```
