@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const _ = require('lodash');
 const configPath = process.argv[2] || './config.local.js';
 const config = require(configPath);
